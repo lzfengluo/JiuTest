@@ -41,13 +41,16 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         initView();
         startInit();
+//        开启一个线程，start()
         new Thread() {
             @Override
             public void run() {
                 super.run();
                 while (!isInterrupted()) {
+//                    获取句柄
                     fd = mSerialPortSpd.getFd();
                     try {
+//                        读串口，获取信息
                         returnStr = mSerialPortSpd.ReadSerial(fd, 1024);
                         if (returnStr != null) {
                             Message msg = new Message();
@@ -74,20 +77,22 @@ public class MainActivity extends AppCompatActivity {
                     } else if ("ALAM".equals(s)) {
                         stateTv.setText("状态：测酒超时");
                         stateTv.setTextColor(Color.parseColor("#8C8117"));
-                    } else if ("0000".compareTo(s) <= 0) {
-                        double num = Double.parseDouble(s);
-                        num = num/10;
+                    } else if ("0000".compareTo(s) <= 0) {//字符串比较，若"0000"<s，返回值为-1，相等为0 ，大于为1
+                        double num = Double.parseDouble(s);//将数字字符串转换成double类型
+                        num = num / 10;
                         if ("0200".compareTo(s) > 0) {
-                            stateTv.setText("状态：正常\n数值：" + num +"mg/100ml");
+                            stateTv.setText("状态：正常\n数值：" + num + "mg/100ml");
+//                            Color.parseColor(String)返回值为int类型，设置颜色
                             stateTv.setTextColor(Color.parseColor("#04DF04"));
                         } else if ("0800".compareTo(s) > 0) {
-                            stateTv.setText("状态：饮酒\n数值：" + num +"mg/100ml");
+                            stateTv.setText("状态：饮酒\n数值：" + num + "mg/100ml");
                             stateTv.setTextColor(Color.parseColor("#C14747"));
                         } else {
-                            stateTv.setText("状态：醉酒\n数值：" + num +"mg/100ml");
+                            stateTv.setText("状态：醉酒\n数值：" + num + "mg/100ml");
                             stateTv.setTextColor(Color.parseColor("#ff0000"));
                         }
                     }
+//                    当接收到信息并处理完之后，恢复按钮为可用状态，并恢复显示文字
                     startBtn.setEnabled(true);
                     startBtn.setText("开始检测");
                 }
@@ -97,32 +102,32 @@ public class MainActivity extends AppCompatActivity {
 
     //    获取控件id
     public void initView() {
-        stateTv = (TextView) findViewById(R.id.state_tv);
-        startBtn = (Button) findViewById(R.id.start_btn);
+        stateTv = (TextView) findViewById(R.id.state_tv);//获取显示文本框
+        startBtn = (Button) findViewById(R.id.start_btn);//获取按钮
     }
 
     public void startInit() {
         mSerialPortSpd = new SerialPortSpd();
 //        获取句柄
         fd = mSerialPortSpd.getFd();
-
+//        打开串口
+        try {
+            mSerialPortSpd.OpenSerial(SERIAL_TTYMT2, brd);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         startBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                try {
-//                    打开串口
-                    mSerialPortSpd.OpenSerial(SERIAL_TTYMT2, brd);
-//                    获取句柄
-                    fd = mSerialPortSpd.getFd();
-                    str = DataConversionUtils.HexString2Bytes("55");
-//                    发送数据
-                    mSerialPortSpd.WriteSerialByte(fd, str);
-                    startBtn.setEnabled(false);
-                    startBtn.setText("正在检测");
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+//              获取句柄
+                fd = mSerialPortSpd.getFd();
+                str = DataConversionUtils.HexString2Bytes("55");
+//              发送数据
+                mSerialPortSpd.WriteSerialByte(fd, str);
+//                将按钮置为禁用状态，改变显示文字
+                startBtn.setEnabled(false);
+                startBtn.setText("正在检测");
             }
         });
     }
@@ -130,6 +135,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+//        关闭串口
         mSerialPortSpd.CloseSerial(fd);
     }
 }
